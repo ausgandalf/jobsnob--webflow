@@ -1,0 +1,65 @@
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const forms = document.querySelectorAll('form.form--approve-job');
+
+    forms.forEach(form => {
+
+      // Make hCaptcha ready
+      jobsnob_makeCaptchaReady(form);
+
+      form.addEventListener('submit', function (event) {
+        // Prevent default form submission first
+        event.preventDefault();
+
+        // Check if CAPTCHA is ready
+        if (!jobsnob_checkCaptcha(form)) return;
+
+        jobsnob_showLoadingOverlay(true);
+        
+        const formData = new FormData(form);
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            redirect: 'manual'
+          })
+          .then(response => {
+            if (response.type =='opaqueredirect' || response.status === 302) {
+              const location = response.headers.get('Location');
+              if (location) {
+                const redirectUrl = new URL(location, window.location.origin);
+                const isSameDomain = redirectUrl.origin === window.location.origin;
+
+                if (isSameDomain) {
+                  window.location.href = redirectUrl.href;
+                  return;
+                }
+              }
+
+              window.location.href = '/app/admin/pending-jobs';  
+              return;
+            }
+            
+            if (response.ok) {
+              return response.text().then(responseText => {
+                if (responseText.includes('captcha-failed')) {
+                  alert('CAPTCHA failed. Please try again.');
+                }
+              });
+            } else {
+              throw new Error('Form submission failed');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          })
+          .finally(() => {
+            jobsnob_showLoadingOverlay(false);
+          });
+
+        // Reset CAPTCHA
+        jobsnob_resetCaptcha(form);
+      });
+    });
+  });
+</script>

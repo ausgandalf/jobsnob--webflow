@@ -1,0 +1,117 @@
+<script>
+  // This will hold cuurently selected form
+  let activeForm = null;
+  const togglePopup = (show) => {
+    if (!activeForm) return;
+
+    const popup = activeForm.querySelector('.popup');
+    if (popup) {
+      popup.style.display = show ? 'block' : 'none';
+    }
+  }
+
+  const proceedSubmission = (token) => {
+    if (!activeForm) return;
+
+    togglePopup(true);
+
+    const formData = new FormData(activeForm);
+    formData.append('hcaptcha_token', token);
+
+    fetch(activeForm.action, {
+      method: 'POST',
+      body: formData,
+      redirect: 'manual'
+    })
+    .then(response => {
+      if (response.type =='opaqueredirect' || response.status === 302) {
+        const location = response.headers.get('Location');
+        if (location) {
+          const redirectUrl = new URL(location, window.location.origin);
+          const isSameDomain = redirectUrl.origin === window.location.origin;
+
+          if (isSameDomain) {
+            window.location.href = redirectUrl.href;
+            return;
+          }
+        }
+        jobsnob_showLoadingOverlay();
+        window.location.href = '/app/admin/pending-applicants';  
+        return;
+      }
+      
+      if (response.ok) {
+        return response.text().then(responseText => {
+          if (responseText.includes('captcha-failed')) {
+            alert('CAPTCHA failed. Please try again.');
+          }
+        });
+      } else {
+        throw new Error('Form submission failed');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    })
+    .finally(() => {
+      togglePopup(false);
+      activeForm = null;
+    });
+    
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    // Fill nested inputs
+    const nestedInputs = document.querySelectorAll(".nested-parent-id");
+    nestedInputs.forEach((nestedInput) => {
+      let parentItem = nestedInput.closest(".w-dyn-item");
+
+      while (parentItem) {
+        const cmsInput = parentItem.querySelector(".parent-cms-id");
+        if (cmsInput) {
+          nestedInput.value = cmsInput.value;
+          break;
+        }
+        parentItem = parentItem.parentElement.closest(".w-dyn-item");
+      }
+    });
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Initialize hCaptcha and form submission
+    //////////////////////////////////////////////////////////////////////////////
+    const captcahWrapper = document.getElementById('captcha-wrapper');
+    if (!captcahWrapper) return;
+
+    // Make hCaptcha ready
+    jobsnob_makeCaptchaReady(
+      captcahWrapper, 
+      {
+        onSuccess: proceedSubmission,
+        onExpired: () => togglePopup(false),
+        onError: () => togglePopup(false),
+        onClose: () => togglePopup(false)
+      }
+    );
+
+    // Crach form submission
+    const forms = document.querySelectorAll('.accept-applicant-form > form');
+    forms.forEach(form => {
+
+      form.addEventListener(
+        'submit', 
+        function (event) {
+          // Prevent default form submission first
+          event.preventDefault();
+          activeForm = form;
+          
+          // Check if CAPTCHA is ready
+          togglePopup(true);
+          const token = jobsnob_checkCaptcha(captcahWrapper);
+          if (!token) return;
+
+          proceedSubmission(token);
+        });
+    });
+  });
+</script>

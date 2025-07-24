@@ -1,0 +1,52 @@
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("[DEBUG] DOMContentLoaded");
+
+    document.body.addEventListener("click", function (e) {
+      const button = e.target.closest("button[type='submit']");
+      if (!button) return;
+
+      const form = button.closest("form.ms-form");
+      if (!form) {
+        console.log("[DEBUG] Clicked submit button not inside ms-form.");
+        return;
+      }
+
+      const emailInput = form.querySelector('input[name="eml"]');
+      const buttonText = button.innerText.trim().toLowerCase();
+
+      console.log("[DEBUG] Button text:", buttonText);
+
+      if (emailInput && buttonText === "send link") {
+        const email = emailInput.value;
+        console.log("[DEBUG] Forgot Password form submit triggered");
+        console.log("[DEBUG] Email:", email);
+
+        // Webhook call
+        fetch("https://hook.us2.make.com/7qi8jfjeyvzjjsx9j5g66p88i2d7yopn", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            event: "forgot_password_requested",
+            email: email,
+            timestamp: new Date().toISOString()
+          })
+        })
+        .then(res => {
+          console.log("[DEBUG] Webhook status:", res.status);
+          return res.text();
+        })
+        .then(body => {
+          console.log("[DEBUG] Webhook response:", body);
+        })
+        .catch(err => {
+          console.error("[DEBUG] Webhook error:", err);
+        });
+      } else {
+        console.log("[DEBUG] Button click didn't match forgot password conditions.");
+      }
+    });
+  });
+</script>

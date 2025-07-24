@@ -1,0 +1,357 @@
+<!--🟢 DATE PICKER CODE 🟢-->
+<script src="https://fengyuanchen.github.io/datepicker/js/datepicker.js"></script>
+<script>
+  $(document).ready(function () {
+      $('[data-input="datepicker"]').datepicker({
+          format: 'mm-dd-yyyy'
+      });
+      // Available date placeholders:
+      // Year: yyyy
+      // Month: mm
+      // Day: dd
+  });
+
+  // Get all form fields with attribute ms-code-convert="link"
+  const formFields = document.querySelectorAll('input[ms-code-convert="link"], textarea[ms-code-convert="link"]');
+
+  // Add event listener to each form field
+  formFields.forEach((field) => {
+    field.addEventListener('input', convertToLink);
+  });
+
+  // Function to convert input to a link
+  function convertToLink(event) {
+    const input = event.target;
+
+    // Get user input
+    const userInput = input.value.trim();
+
+    // Check if input starts with http:// or https://
+    if (userInput.startsWith('http://') || userInput.startsWith('https://')) {
+      input.value = userInput; // No conversion needed for valid links
+    } else {
+      input.value = `http://${userInput}`; // Prepend http:// for simplicity
+    }
+  }
+
+  // Function to update the profile picture URL
+  function updateProfilePicture() {
+    // Find the image element with data-ms-member="profile-image"
+    var profileImage = document.querySelector('img[data-ms-member="profile-image"]');
+    
+    // Find the input element with data-ms-member="profile-pic-url"
+    var profilePicUrlInput = document.querySelector('input[data-ms-member="profile-pic-url"]');
+    
+    // Get the source URL of the profile image
+    var profileImageUrl = profileImage.src;
+    
+    // Set the value of the input field to the profile image URL
+    profilePicUrlInput.value = profileImageUrl;
+  }
+
+  // Update the profile picture URL initially
+  updateProfilePicture();
+
+  // Monitor changes in the profile image source URL
+  document.querySelector('img[data-ms-member="profile-image"]').addEventListener('load', updateProfilePicture);
+
+  // File upload forms
+  const forms = document.querySelectorAll('form[ms-code-file-upload="form"]');
+  forms.forEach((form) => {
+    form.setAttribute('enctype', 'multipart/form-data');
+    const uploadInputs = form.querySelectorAll('[ms-code-file-upload-input]');
+
+    uploadInputs.forEach((uploadInput) => {
+      const inputName = uploadInput.getAttribute('ms-code-file-upload-input');
+
+      const fileInput = document.createElement('input');
+      fileInput.setAttribute('type', 'file');
+      fileInput.setAttribute('name', inputName);
+      fileInput.setAttribute('id', inputName);
+      fileInput.required = true; // delete this line to make the input optional
+
+      uploadInput.appendChild(fileInput);
+    });
+  });
+
+  // FILL OUT JOB CATEGORY WITH SKILLS
+	const selectbox = document.querySelector('#field');
+  const skills = document.querySelectorAll('.skill');
+  
+  skills.forEach((el) => {
+  
+    let option = document.createElement("option");
+    option.text = el.innerText;
+    option.value = el.innerText;
+    
+    selectbox.add(option);
+ });
+
+
+  document.addEventListener('DOMContentLoaded', function () {
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    const fields = document.querySelectorAll('[ms-code-require]');
+    fields.forEach(field => {
+      const id = field.getAttribute('ms-code-require');
+      const errorElement = document.querySelector(`[ms-code-require-error="${id}"]`);
+      if (errorElement) {
+        errorElement.style.display = 'none';
+      }
+
+      const validate = debounce(function () {
+        const patternString = field.getAttribute('ms-code-require-pattern');
+        if (!patternString) return;
+
+        const pattern = new RegExp(patternString);
+        const cleanVal = field.value.replace(/[^0-9]/g, ''); // Remove non-digits
+
+        if (!pattern.test(cleanVal)) {
+          if (errorElement) errorElement.style.display = 'block';
+        } else {
+          if (errorElement) errorElement.style.display = 'none';
+        }
+      }, 200);
+
+      field.addEventListener('input', validate);
+    });
+  });
+
+  // SHOWS THE $ PREFIX ON INPUT
+  document.addEventListener('DOMContentLoaded', function () {
+  const currencyInputs = document.querySelectorAll('[ms-code-currency]');
+
+    currencyInputs.forEach((input) => {
+      // Add formatting as user types
+      input.addEventListener('input', function (e) {
+        let val = e.target.value.replace(/[^\d]/g, '');
+        val = val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        e.target.value = '$' + val;
+      });
+
+      // Remove $ and commas before Memberstack captures the value
+      input.addEventListener('blur', function () {
+        const numericOnly = input.value.replace(/[^0-9]/g, '');
+        input.setAttribute('data-ms-member-value', numericOnly);
+      });
+    });
+  });
+
+  // LOGIC FOR SHOWING AND HIDING INPUTS
+  document.addEventListener('DOMContentLoaded', function () {
+    const compType = document.getElementById('compensation-type');
+
+    const groupSalary = document.getElementById('group-salary');
+    const groupHourly = document.getElementById('group-hourly');
+    const groupTotalComp = document.getElementById('group-total-comp');
+
+    const hideAll = () => {
+      groupSalary.style.display = 'none';
+      groupHourly.style.display = 'none';
+      groupTotalComp.style.display = 'none';
+
+      // Disable inputs
+      groupSalary.querySelectorAll('input').forEach(input => input.disabled = true);
+      groupHourly.querySelectorAll('input').forEach(input => input.disabled = true);
+      groupTotalComp.querySelectorAll('input').forEach(input => input.disabled = true);
+    };
+
+    const showRelevantFields = (value) => {
+      hideAll();
+
+      const enableInputs = (group) => {
+        group.querySelectorAll('input').forEach(input => input.disabled = false);
+      };
+
+      switch (value) {
+        case 'Salary Only':
+          groupSalary.style.display = 'block';
+          enableInputs(groupSalary);
+          break;
+        case 'Salary + Commission':
+        case 'Salary + Bonus':
+          groupSalary.style.display = 'block';
+          groupTotalComp.style.display = 'block';
+          enableInputs(groupSalary);
+          enableInputs(groupTotalComp);
+          break;
+        case 'Hourly Only':
+          groupHourly.style.display = 'block';
+          enableInputs(groupHourly);
+          break;
+        case 'Hourly + Commission':
+        case 'Hourly + Bonus':
+          groupHourly.style.display = 'block';
+          groupTotalComp.style.display = 'block';
+          enableInputs(groupHourly);
+          enableInputs(groupTotalComp);
+          break;
+        case 'Commission Only':
+          groupTotalComp.style.display = 'block';
+          enableInputs(groupTotalComp);
+          break;
+      }
+    };
+
+    // Initial setup
+    hideAll();
+    if (compType.value) showRelevantFields(compType.value);
+
+    // On change
+    compType.addEventListener('change', (e) => {
+      showRelevantFields(e.target.value);
+    });
+  });
+
+  // UPDATE INPUT FIELD FOR YEARS STARTED
+  document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("years-of-aesthetic-industry-experience");
+    const currentYear = new Date().getFullYear();
+    const startYear = 1990;
+
+    // Add placeholder option
+    const defaultOption = document.createElement("option");
+    defaultOption.text = "Select year started...";
+    defaultOption.value = "";
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    // Add "No Experience" option
+    const noExpOption = document.createElement("option");
+    noExpOption.text = "No Experience in Medical Aesthetics";
+    noExpOption.value = "0";
+    select.appendChild(noExpOption);
+
+    // Add year options dynamically
+    for (let year = currentYear; year >= startYear; year--) {
+      const experience = currentYear - year;
+      const option = document.createElement("option");
+      option.textContent = year.toString();
+      option.value = experience >= 20 ? "20+" : experience.toString();
+      select.appendChild(option);
+    }
+  });
+
+  //////////////////////////////////////////////////////////////////////////////
+  // ON RESUME UPDATED
+  const onResumeUpdated = () => {
+    window.location.href = '/app/applicants/dashboard';
+  }
+
+  const onboading_updateResume = (token) => {
+    // Check if CAPTCHA is ready
+    if (!token) {
+      // Check if CAPTCHA is ready, if not open captcha
+      const form = document.querySelector('#email-form'); // Make sure this is your correct form ID
+      token = jobsnob_checkCaptcha(form);
+      if (!token) return;
+    }
+
+    const resumeInput = document.getElementById("resumeurl");
+    const resumeUrl = resumeInput.value;
+    if (!resumeUrl) {
+      onResumeUpdated();
+      return;
+    }
+
+    jobsnob_showLoadingOverlay();
+    fetch("https://hook.us2.make.com/j2lji3n8z3a1dgh881xdisu6988uxgdi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        memberstack_id: document.getElementById("memberstack-id").value,
+        resume_url: resumeUrl,
+        token,
+      })
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.text().then(responseText => {
+          if (responseText.includes('captcha-failed')) {
+            // Captach failed, then retry to re-submit
+            onboading_updateResume();
+          } else {
+            onResumeUpdated();
+          }
+        });
+      } else {
+        throw new Error('Form submission failed');
+        onboading_updateResume();
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      onboading_updateResume();
+    })
+    .finally(() => {
+      jobsnob_showLoadingOverlay(false);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('#email-form'); // Make sure this is your correct form ID
+    const revenueField = document.querySelector('#total-revenue-generated');
+    const revenuePeriodField = document.querySelector('#total-revenue-generated-per');
+
+    // Ensure the fields are visible and have required attributes when they are shown
+    function toggleRequiredFields() {
+      const isRevenueFieldVisible = revenueField.offsetParent !== null; // Check if field is visible
+      const isRevenuePeriodFieldVisible = revenuePeriodField.offsetParent !== null; // Check if field is visible
+
+      // If hidden, remove required attribute
+      if (!isRevenueFieldVisible) {
+        revenueField.removeAttribute('required');
+      }
+
+      if (!isRevenuePeriodFieldVisible) {
+        revenuePeriodField.removeAttribute('required');
+      }
+
+      // If visible, add required attribute back
+      if (isRevenueFieldVisible) {
+        revenueField.setAttribute('required', 'true');
+      }
+
+      if (isRevenuePeriodFieldVisible) {
+        revenuePeriodField.setAttribute('required', 'true');
+      }
+    }
+
+    // Call the function initially to set up visibility
+    toggleRequiredFields();
+
+    // Make hCaptcha ready
+    jobsnob_makeCaptchaReady(form);
+
+    // Call the function whenever the form is being submitted to ensure the visibility is updated
+    form.addEventListener('submit', function (e) {
+
+      toggleRequiredFields(); // Ensure the fields' required attributes are updated
+      const requiredFields = form.querySelectorAll('input, select, textarea');
+
+      requiredFields.forEach(field => {
+        const isHidden = field.offsetParent === null || field.disabled;
+
+        if (isHidden && field.hasAttribute('required')) {
+          field.removeAttribute('required');
+        }
+      });
+
+      onboading_updateResume();
+
+    });
+  });
+
+
+</script>

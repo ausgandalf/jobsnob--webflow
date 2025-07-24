@@ -1,0 +1,296 @@
+<!-- Memberstack webflow package -->
+<script data-memberstack-app="app_cm6l6spl000rt0tvl91uc9epl" src="https://static.memberstack.com/scripts/v1/memberstack.js" type="text/javascript"></script>
+<!-- Please keep this css code to improve the font quality-->
+<style>
+  * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+</style>
+<script async type="text/javascript" src="https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=QXC5Aw"></script>
+<!---uploadcare--->
+<link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-regular.min.css">
+<script type="module">
+  import * as UC from "https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-regular.min.js";
+  UC.defineComponents(UC);
+</script>
+
+<script>
+  /**
+   * Author: Jesse Beecham
+   * Date: 2025-07-16
+   * Description: Load hCaptcha and check if it is ready
+   */
+  function jobsnob_enableSubmitButtonByCaptcha(container, enable = true) {
+    const myform = container.closest('form');
+    if (!myform) return;
+    const submitButton = myform.querySelector('[type="submit"].is-form-submit');
+    if (submitButton) {
+      submitButton.disabled = !enable;
+    }
+  }
+
+  // Load hCaptcha
+  function jobsnob_loadCaptcha(container, config) {
+    const { onSuccess, onExpired, onError, onClose, onChalexpired, onOpen } = config || {};
+
+    if (window.hcaptcha) {
+      const widgetId = hcaptcha.render(container, {
+        sitekey: 'fb2ce0be-3990-45b4-8994-c6c0bb80b1f6',
+        callback: function(token) {
+          // hCaptcha solved
+          // Enable submit button
+          // console.log('hCaptcha callback: ',token);
+          jobsnob_enableSubmitButtonByCaptcha(container, true);
+          if (onSuccess) onSuccess(token);
+        },
+        'expired-callback': function() {
+          // hCaptcha expired
+          console.log('hCaptcha expired');
+          jobsnob_enableSubmitButtonByCaptcha(container, false);
+          if (onExpired) onExpired();
+        },
+        'error-callback': function(errorCode) {
+          // hCaptcha failed to load
+          console.log('hCaptcha error, error code:', errorCode);
+          jobsnob_enableSubmitButtonByCaptcha(container, false);
+          if (onError) onError(errorCode);
+        },
+        'close-callback': function() {
+          // hCaptcha closed
+          console.log('hCaptcha closed');
+          if (onClose) onClose();
+        },
+        'open-callback': function() {
+          // hCaptcha opened
+          console.log('hCaptcha opened');
+          if (onOpen) onOpen();
+        },
+        'chalexpired-callback': function() {
+          // hCaptcha closed
+          console.log('hCaptcha chalexpired-callback');
+          if (onChalexpired) {
+            onChalexpired();
+          } else {
+            if (onClose) onClose();
+          }
+        },
+      });
+      container.setAttribute('data-hcaptcha-id', widgetId);
+      container.setAttribute('data-hcaptcha-ready', 'true');
+      // console.log('hCaptcha initialized, widget ID:', widgetId);
+    } else {
+      // console.warn('hCaptcha not available yet.');
+    }
+
+    // Disable submit button
+    jobsnob_enableSubmitButtonByCaptcha(container, false);
+  }
+
+  function jobsnob_waitForHcaptcha(container, config, retries = 10) {
+    const interval = setInterval(() => {
+      if (window.hcaptcha) {
+        clearInterval(interval);
+        // console.log('hCaptcha loaded.');
+        jobsnob_loadCaptcha(container, config);
+      } else if (retries-- <= 0) {
+        clearInterval(interval);
+        // console.error('hCaptcha failed to load.');
+        alert('hCaptcha failed to load. Please contact support at info@jobsnob.net');
+      }
+    }, 500);
+  }
+
+  function jobsnob_makeCaptchaReady(form, config) {
+    // Lets initialize hCaptcha
+    if (typeof form === 'string') {
+      form = document.querySelector(form);
+    }
+
+    if (!form) return;
+
+    const hcaptchaContainer = form.querySelector('.hcaptcha');
+    if (hcaptchaContainer) {
+      // Disable the submit button
+      const mySubmitButton = form.querySelector('[type="submit"].is-form-submit');
+      if (mySubmitButton) {
+        mySubmitButton.disabled = true;
+      }
+
+      // Check if hCaptcha is initialized
+      if (!hcaptchaContainer.querySelector('iframe')) {
+        // Not yet initialized, so initialize it
+        jobsnob_waitForHcaptcha(hcaptchaContainer, config);
+      } else {
+        // Already initialized, so get the widget ID
+        hcaptchaContainer.setAttribute('data-hcaptcha-ready', 'true');
+      }
+    }
+  }
+
+  function jobsnob_checkCaptcha(form) {
+    const hcaptchaContainer = form.querySelector('.hcaptcha');
+    if (hcaptchaContainer) {
+      if (hcaptchaContainer.getAttribute('data-hcaptcha-ready') == 'true') {
+        const widgetId = hcaptchaContainer.getAttribute('data-hcaptcha-id');
+        const token = hcaptcha.getResponse(widgetId ? widgetId : null);
+        if (token) {
+          return token;
+        } else {
+          // alert('Please complete the CAPTCHA first.');
+          hcaptcha.execute(widgetId ? widgetId : null);
+          return false;
+        }
+      } else {
+        alert('Please wait for CAPTCHA to load first.');
+        return false;
+      }
+    }
+    return false;
+  }
+
+  function jobsnob_resetCaptcha(form) {
+    const hcaptchaContainer = form.querySelector('.hcaptcha');
+    if (hcaptchaContainer) {
+      if (hcaptchaContainer.getAttribute('data-hcaptcha-ready') == 'true') {
+        const widgetId = hcaptchaContainer.getAttribute('data-hcaptcha-id');
+        hcaptcha.reset(widgetId ? widgetId : null);
+      }
+    }
+  }
+
+  function jobsnob_showLoadingOverlay(isShow = true) {
+    if (isShow) {
+      document.body.classList.add('loading');
+    } else {
+      document.body.classList.remove('loading');
+    }
+  }
+
+</script>
+
+<style>
+  .code-embed-2.w-embed {
+    width: 100%;
+}
+
+[data-testid="klaviyo-form-RCCuqk"],
+.klaviyo-form-RCCuqk [data-testid="form-component"]{
+   padding-inline: 0 !important; 
+}
+
+.klaviyo-form-RCCuqk label {
+    display: none !important;
+}
+
+.klaviyo-form-RCCuqk input {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid black !important;
+}
+
+.klaviyo-form-RCCuqk input::placeholder {
+    font-family: Proxima Nova, Arial, sans-serif !important;
+}
+
+.klaviyo-form-RCCuqk input[name="phone-number"] {
+    border: none !important;
+}
+
+.klaviyo-form-RCCuqk [data-testid="form-row"]:nth-child(4) label + div {
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid black !important;
+}
+
+.klaviyo-form-RCCuqk button[aria-label="Search Countries"] {
+    justify-content: start !important;!i;!;
+    gap: 5px;
+}
+
+.klaviyo-form-RCCuqk label[for="%24consent__5__7"] {
+    display: flex !important;
+}
+
+.klaviyo-form-RCCuqk label[for="%24consent__5__7"] div {
+    font-size: .8rem !important;
+}
+  
+.klaviyo-form-SAqYpM input {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid white !important;
+}
+  
+.klaviyo-form-RuQ9yV input {
+ 	padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid black !important;
+}
+    .klaviyo-form-RuQ9yV input::placeholder {
+  text-transform: uppercase !important;
+}
+  
+ .klaviyo-form-UJP98T input {
+	padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid black !important;
+}
+  .klaviyo-form-UJP98T input::placeholder {
+  text-transform: uppercase !important;
+}
+
+.klaviyo-form-VvpWCj input {
+	padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid white !important;
+}
+  
+  @media screen and (max-width: 600px) {
+  .klaviyo-form-RuQ9yV,
+  .klaviyo-form-UJP98T {
+    width: 100% !important;
+    max-width: 400px !important;
+    margin: 0 auto !important;
+  }
+
+  .klaviyo-form-RuQ9yV input,
+  .klaviyo-form-UJP98T input {
+    font-size: 14px !important;
+  }
+      .klaviyo-form-RuQ9yV button[aria-label="Search Countries"],
+  .klaviyo-form-UJP98T button[aria-label="Search Countries"] {
+    width: 36px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  .klaviyo-form-RuQ9yV button[aria-label="Search Countries"] img,
+  .klaviyo-form-UJP98T button[aria-label="Search Countries"] img {
+    width: 0.9em !important;
+    height: 0.9em !important;
+  }
+
+  .klaviyo-form-RuQ9yV button[aria-label="Search Countries"] svg,
+  .klaviyo-form-UJP98T button[aria-label="Search Countries"] svg {
+    display: none !important;
+  }
+}
+  
+  label[for^="UTM_Source"],
+input[id^="UTM_Source"]{
+  display: none !important;
+}
+  .is-form-submit[disabled] {
+    opacity: 0.5;
+  }
+  
+  body.loading .loading-overlay {display: block !important;}
+  
+</style>
