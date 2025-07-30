@@ -37,6 +37,27 @@
     var about = document.querySelector('textarea[name=Description]');
     about.value = quill.root.innerHTML;
 
+    // Check if address is filled up
+    const addressFields = [
+      "FullAddress",
+      "City",
+      "State",
+      "Latitude",
+      "Longitude"
+    ]
+    let isAddressFilled = true;
+    addressFields.forEach(field => {
+      const value = document.getElementById(field).value;
+      if (!value) {
+        isAddressFilled = false;
+      }
+    });
+
+    if (!isAddressFilled) {
+      alert('Please choose valid job location to fill up the address fields.');
+      return;
+    }
+
     // Submit the form
     jobsnob_showLoadingOverlay();
     const formData = new FormData(form);

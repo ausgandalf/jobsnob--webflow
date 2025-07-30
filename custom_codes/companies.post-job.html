@@ -1,0 +1,106 @@
+<!-- Include the Quill library -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<!-- Initialize Quill editor -->
+<script>
+  var quill = new Quill('#editor', {
+      modules: {
+          toolbar: [
+            [{ 'header': [2, 3, 4, 5, 6, false] }],
+          
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block', 'link'],
+
+            
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+
+            ['clean']
+        ]
+      },
+    placeholder: 'You can start typing here...',
+    theme: 'snow'
+  });
+
+  console.log("quill initialized: ", quill);
+
+  var form = document.querySelector('#post-form');
+  form.onsubmit = function() {
+    // Populate hidden form on submit
+    var about = document.querySelector('textarea[name=Description]');
+    about.value = quill.root.innerHTML;
+  
+    // Check if address is filled up
+    const addressFields = [
+      "FullAddress",
+      "City",
+      "State",
+      "Latitude",
+      "Longitude"
+    ]
+    let isAddressFilled = true;
+    addressFields.forEach(field => {
+      const value = document.getElementById(field).value;
+      if (!value) {
+        isAddressFilled = false;
+      }
+    });
+
+    if (!isAddressFilled) {
+      alert('Please choose valid job location to fill up the address fields.');
+      return false;
+    }
+
+    // console.log("Submitted", $(form).serialize(), $(form).serializeArray());
+
+    return true;
+  };
+
+
+	const selectbox = document.querySelector('#field');
+  const skills = document.querySelectorAll('.skill');
+  
+  skills.forEach((el) => {
+  
+  let option = document.createElement("option");
+  option.text = el.innerText;
+  option.value = el.innerText;
+  
+  selectbox.add(option);
+ });
+
+  $(document).ready(function() {
+    $(window).keydown(function(event){
+      if(event.keyCode == 13) {
+        event.preventDefault();
+        return false;
+      }
+    });
+  });
+
+  document.addEventListener("DOMContentLoaded", function() {
+    // give Memberstack a moment to swap in your custom-field value
+    setTimeout(function() {
+      // 1) grab the element that Memberstack filled
+      const creditsEl = document.querySelector('[data-ms-member="job-credits"]');
+      if (!creditsEl) return; 
+
+      // 2) parse its textContent into a number
+      const credits = parseInt(creditsEl.textContent.trim(), 10) || 0;
+
+      // 3) grab your two blocks
+      const payBlock  = document.getElementById("pay-block");
+      const formBlock = document.getElementById("form-block");
+      if (!payBlock || !formBlock) return;
+
+      // 4) toggle
+      if (credits > 0) {
+        payBlock.style.display  = "none";
+        formBlock.style.display = "block";
+      } else {
+        payBlock.style.display  = "block";
+        formBlock.style.display = "none";
+      }
+    }, 100);
+  });
+  
+</script>

@@ -1,0 +1,62 @@
+<style>
+  gmp-place-autocomplete {
+    color-scheme: light;
+    border: 1px solid rgb(240 240 240);
+    border-radius: 0;
+  }
+</style>
+
+<input type="hidden" name="FullAddress" id="FullAddress"/>
+<div id="address-autocomplete-wrapper"></div>
+
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATQi0kZMhLJoAjGnBWkdS6qB39iKGyD-c&loading=async&libraries=places&callback=initMap">
+</script>
+
+<script>
+
+  function jobsnob_getPlaceComponentValue(components, type, field = 'longText') {
+    const comp = components.find(c => c.types.includes(type));
+    return comp?.[field] || '';
+  };
+  
+  function initMap() {
+
+    const wrapper = document.getElementById("address-autocomplete-wrapper");
+    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+    placeAutocomplete.Dg?.setAttribute('placeholder', 'Start typing address');
+    wrapper.appendChild(placeAutocomplete);
+
+    placeAutocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ['displayName', 'addressComponents', 'formattedAddress', 'location'] });
+
+      document.getElementById("FullAddress").value = place.formattedAddress ?? '';
+
+      // Compose address line 1 (street number + route)
+      const streetNumber = jobsnob_getPlaceComponentValue(place.addressComponents, 'street_number');         // e.g., "1600"
+      const route = jobsnob_getPlaceComponentValue(place.addressComponents, 'route');                        // e.g., "Amphitheatre Pkwy"
+      const address1 = [streetNumber, route].filter(Boolean).join(' '); // "1600 Amphitheatre Pkwy"
+
+      // Optional: address line 2 from subpremise, like apartment or suite
+      const subpremise = jobsnob_getPlaceComponentValue(place.addressComponents, 'subpremise');              // e.g., "Apt 2B"
+      const address2 = subpremise || '';  
+
+      const city = jobsnob_getPlaceComponentValue(place.addressComponents, "locality");
+      const state = jobsnob_getPlaceComponentValue(place.addressComponents, "administrative_area_level_1", "shortText");
+      const postalCode = jobsnob_getPlaceComponentValue(place.addressComponents, "postal_code");
+
+      document.getElementById("Address1").value = address1 ?? '';
+      document.getElementById("Address2").value = address2 ?? '';
+      document.getElementById("City").value = city ?? '';
+      document.getElementById("State").value = state ?? '';
+      document.getElementById("Zipcode").value = postalCode ?? '';
+
+      document.getElementById("Latitude").value = place.location.lat();
+      document.getElementById("Longitude").value = place.location.lng();
+    });
+
+  }
+
+  window.initMap = initMap;
+</script>
