@@ -19,8 +19,49 @@
 <script>
   /**
    * Author: Jesse Beecham
+   * Date: 2025-07-31
+   * Description: Calculate the haversine distance between two points
+   */
+   function jobsnob_haversineDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371; // Earth radius in km. Use 3958.8 for miles
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function jobsnob_haversineDistanceMiles(lat1, lng1, lat2, lng2) {
+    const R = 3958.8; // Earth radius in miles
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  /**
+   * Author: Jesse Beecham
+   * Date: 2025-07-31
+   * Description: Get the value of a place component
+   */
+  function jobsnob_getPlaceComponentValue(components, type, field = 'longText') {
+    const comp = components.find(c => c.types.includes(type));
+    return comp?.[field] || '';
+  };
+
+  /**
+   * Author: Jesse Beecham
    * Date: 2025-07-16
-   * Description: Load hCaptcha and check if it is ready
+   * Description: hCaptcha related functions
    */
   function jobsnob_enableSubmitButtonByCaptcha(container, enable = true) {
     const myform = container.closest('form');
@@ -293,4 +334,16 @@ input[id^="UTM_Source"]{
   
   body.loading .loading-overlay {display: block !important;}
   
+  gmp-place-autocomplete {
+    color-scheme: light;
+    border: 1px solid rgb(240 240 240);
+    border-radius: 0;
+  }
+  
+  .is-list-pagination-disabled { display: none !important; }
+  
+  .w-dyn-list .w-dyn-empty {max-width: 1280px; margin: auto;}
+  @media (max-width: 780px) {
+    .w-dyn-list .w-dyn-empty {margin-top: 60px;}
+  }
 </style>

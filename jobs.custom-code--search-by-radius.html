@@ -1,0 +1,158 @@
+<input type="hidden" id="radius-search--lat" value="">
+<input type="hidden" id="radius-search--lng" value="">
+<input type="hidden" name="FullAddress" id="FullAddress"/>
+
+<style>
+  gmp-place-autocomplete {
+    width: 330px;
+  }
+
+  @media (max-width: 780px) {
+    gmp-place-autocomplete {
+      width: 100%;
+    }
+  }
+</style>
+
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATQi0kZMhLJoAjGnBWkdS6qB39iKGyD-c&loading=async&libraries=places&callback=initMap">
+</script>
+
+<script>
+
+  function initMap() {
+
+    const wrapper = document.getElementById("radius-search--address-autocomplete-wrapper");
+    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+    if (placeAutocomplete.Dg) {
+      placeAutocomplete.Dg.setAttribute('placeholder', 'Start typing address');
+
+      placeAutocomplete.Dg.addEventListener('blur', function (e) {
+        const value = e.target.value.trim();
+        if (value === '') {
+          // Clear all address fields
+          document.getElementById("radius-search--lat").value = '';
+          document.getElementById("radius-search--lng").value = '';
+          triggerFilter();
+        } else {
+          // Rollback to the correct full address
+          e.target.value = document.getElementById("FullAddress").value;
+        }
+      });
+
+      placeAutocomplete.Dg.addEventListener('keyup', function (e) {
+        const value = e.target.value;
+        if (value === '') {
+          // Clear all address fields
+          document.getElementById("radius-search--lat").value = '';
+          document.getElementById("radius-search--lng").value = '';
+          triggerFilter();
+        }
+      });
+    }
+
+    wrapper.appendChild(placeAutocomplete);
+
+    placeAutocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+
+      document.getElementById("FullAddress").value = place.formattedAddress ?? '';
+
+      document.getElementById("radius-search--lat").value = place.location.lat();
+      document.getElementById("radius-search--lng").value = place.location.lng();
+
+      // Trigger the filter
+      triggerFilter();
+    });
+
+  }
+  window.initMap = initMap;
+
+  let listInstance = null;
+  const radiusSelect = document.getElementById('radius-select');
+  
+  radiusSelect.addEventListener('change', () => {
+    triggerFilter();
+  });
+
+  function triggerFilter() {
+    listInstance?.triggerHook('filter');
+    updateAllDistances();
+  }
+
+  window.FinsweetAttributes ||= [];
+  window.FinsweetAttributes.push([
+    'list',
+    (listInstances) => {
+      // Your code goes here.
+      listInstance = listInstances[0];
+      // Ensure that only items for the current target are displayed
+      listInstance.addHook('filter', (items) => {
+        const filteredItems = items.filter((item) => {
+          return inRadius(item.element);
+        });
+
+        return filteredItems;
+      });
+    },
+  ]);
+
+  function updateAllDistances() {
+    const items = document.querySelectorAll('[fs-list-element="list"] [role="listitem"]');
+
+    items.forEach(item => {
+      updateItemDistance(item);
+    });
+  }
+
+  function updateItemDistance(item) {
+
+    const distanceEl = item.querySelector('.details--distance');
+
+    const fromLat = parseFloat(document.getElementById('radius-search--lat').value);
+    const fromLng = parseFloat(document.getElementById('radius-search--lng').value);
+    if (isNaN(fromLat) || isNaN(fromLng)) {
+      distanceEl.textContent = '';
+      return;
+    }
+
+    const geoEl = item.querySelector('.data--geo');
+    const lat = parseFloat(geoEl?.getAttribute('data-lat'));
+    const lng = parseFloat(geoEl?.getAttribute('data-lng'));
+
+    if (isNaN(lat) || isNaN(lng) || !distanceEl) {
+      distanceEl.textContent = '';
+      return;
+    }
+
+    const distance = jobsnob_haversineDistance(fromLat, fromLng, lat, lng);
+    const distanceMiles = distance * 0.621371;
+    const rounded = distanceMiles.toFixed(1); // 1 decimal place
+    distanceEl.textContent = `${rounded} mi`;
+  }
+
+  function inRadius( element ) {
+    const isShowInvalidGeo = true;
+
+    const fromLat = parseFloat(document.getElementById('radius-search--lat').value);
+    const fromLng = parseFloat(document.getElementById('radius-search--lng').value);
+    if (isNaN(fromLat) || isNaN(fromLng)) return isShowInvalidGeo;
+
+    const radius = parseFloat(radiusSelect.value);
+    if (radius === 0) return true;
+
+    const geoEl = element.querySelector('.data--geo');
+    if (!geoEl) return isShowInvalidGeo;
+
+    const lat = parseFloat(geoEl.getAttribute('data-lat'));
+    const lng = parseFloat(geoEl.getAttribute('data-lng'));
+
+    if (isNaN(lat) || isNaN(lng)) return isShowInvalidGeo; // If the location is not set, let's show the job, too
+
+    const distance = jobsnob_haversineDistance(fromLat, fromLng, lat, lng);
+    const distanceMiles = distance * 0.621371;
+    return distanceMiles <= radius;
+  };
+
+</script>

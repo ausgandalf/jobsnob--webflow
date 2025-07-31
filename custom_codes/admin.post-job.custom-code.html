@@ -1,11 +1,3 @@
-<style>
-  gmp-place-autocomplete {
-    color-scheme: light;
-    border: 1px solid rgb(240 240 240);
-    border-radius: 0;
-  }
-</style>
-
 <input type="hidden" name="FullAddress" id="FullAddress"/>
 <div id="address-autocomplete-wrapper"></div>
 
@@ -14,17 +6,32 @@
 </script>
 
 <script>
-
-  function jobsnob_getPlaceComponentValue(components, type, field = 'longText') {
-    const comp = components.find(c => c.types.includes(type));
-    return comp?.[field] || '';
-  };
-  
   function initMap() {
 
     const wrapper = document.getElementById("address-autocomplete-wrapper");
     const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
-    placeAutocomplete.Dg?.setAttribute('placeholder', 'Start typing address');
+    if (placeAutocomplete.Dg) {
+      placeAutocomplete.Dg.setAttribute('placeholder', 'Start typing address');
+
+      placeAutocomplete.Dg.addEventListener('blur', function (e) {
+        const value = e.target.value.trim();
+        if (value === '') {
+          // Clear all address fields
+          document.getElementById("Address1").value = '';
+          document.getElementById("Address2").value = '';
+          document.getElementById("City").value = '';
+          document.getElementById("State").value = '';
+          document.getElementById("Zipcode").value = '';
+
+          document.getElementById("Latitude").value = '';
+          document.getElementById("Longitude").value = '';
+        } else {
+          // Rollback to the correct full address
+          e.target.value = document.getElementById("FullAddress").value;
+        }
+      });
+    }
+
     wrapper.appendChild(placeAutocomplete);
 
     placeAutocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {
