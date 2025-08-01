@@ -17,6 +17,51 @@
 </script>
 
 <script>
+
+  /**
+   * Author: Jesse Beecham
+   * Date: 2025-07-31
+   * Description: Parse a latitude or longitude string into a decimal value
+   * param: latLong - string : 40°44'55.2"N or 73°59'0.0"W
+   * return: decimal value : 40.748666666666666 or -73.98333333333333
+   */
+  function jobsnob_parseLatLong(latLong) {
+    const regex = /(\d+)°\s*(\d+)’\s*(\d+)(?:″|")?\s*([NSEW])/i;
+    const match = latLong.trim().match(regex);
+    if (!match) return null;
+
+    let [_, degrees, minutes, seconds, direction] = match;
+    let decimal = parseInt(degrees) + parseInt(minutes) / 60 + parseInt(seconds) / 3600;
+
+    if (['S', 'W'].includes(direction.toUpperCase())) {
+      decimal *= -1;
+    }
+
+    return decimal;
+  };
+
+  /**
+   * Author: Jesse Beecham
+   * Date: 2025-07-31
+   * Description: Validate a latitude or longitude string and return a decimal value
+   * param: coord - string : 40°44'55.2"N or 73.98333333333333
+   * return: decimal value : 40.748666666666666 or -73.98333333333333 or NaN
+   */
+  function jobsnob_validateLatLong(coord) {
+    const dmsRegex = /(\d+)[°º]\s*\d+[’']\s*\d+(?:[″"])?\s*[NSEW]/i;
+    const decimalRegex = /^-?\d+(\.\d+)?$/;
+
+    const trimmed = coord.trim();
+
+    if (dmsRegex.test(trimmed)) {
+      return jobsnob_parseLatLong(trimmed);
+    } else if (decimalRegex.test(trimmed)) {
+      return parseFloat(trimmed);
+    } else {
+      return NaN;
+    }
+  }
+
   /**
    * Author: Jesse Beecham
    * Date: 2025-07-31

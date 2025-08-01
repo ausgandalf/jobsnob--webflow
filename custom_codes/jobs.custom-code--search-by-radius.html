@@ -12,6 +12,10 @@
       width: 100%;
     }
   }
+
+  .filters_form--sidebar .filter-row--place-radius {flex-direction: column;}
+  .filters_form--sidebar .filter-row--place-radius gmp-place-autocomplete {width: 100%;}
+
 </style>
 
 <script async
@@ -95,6 +99,12 @@
 
         return filteredItems;
       });
+
+      listInstance.addHook('afterRender', (items) => {
+        updateAllDistances();
+        return items;
+      });
+
     },
   ]);
 
@@ -110,16 +120,16 @@
 
     const distanceEl = item.querySelector('.details--distance');
 
-    const fromLat = parseFloat(document.getElementById('radius-search--lat').value);
-    const fromLng = parseFloat(document.getElementById('radius-search--lng').value);
+    const fromLat = jobsnob_validateLatLong(document.getElementById('radius-search--lat').value);
+    const fromLng = jobsnob_validateLatLong(document.getElementById('radius-search--lng').value);
     if (isNaN(fromLat) || isNaN(fromLng)) {
       distanceEl.textContent = '';
       return;
     }
 
     const geoEl = item.querySelector('.data--geo');
-    const lat = parseFloat(geoEl?.getAttribute('data-lat'));
-    const lng = parseFloat(geoEl?.getAttribute('data-lng'));
+    const lat = jobsnob_validateLatLong(geoEl?.getAttribute('data-lat'));
+    const lng = jobsnob_validateLatLong(geoEl?.getAttribute('data-lng'));
 
     if (isNaN(lat) || isNaN(lng) || !distanceEl) {
       distanceEl.textContent = '';
@@ -135,8 +145,8 @@
   function inRadius( element ) {
     const isShowInvalidGeo = true;
 
-    const fromLat = parseFloat(document.getElementById('radius-search--lat').value);
-    const fromLng = parseFloat(document.getElementById('radius-search--lng').value);
+    const fromLat = jobsnob_validateLatLong(document.getElementById('radius-search--lat').value);
+    const fromLng = jobsnob_validateLatLong(document.getElementById('radius-search--lng').value);
     if (isNaN(fromLat) || isNaN(fromLng)) return isShowInvalidGeo;
 
     const radius = parseFloat(radiusSelect.value);
@@ -145,8 +155,8 @@
     const geoEl = element.querySelector('.data--geo');
     if (!geoEl) return isShowInvalidGeo;
 
-    const lat = parseFloat(geoEl.getAttribute('data-lat'));
-    const lng = parseFloat(geoEl.getAttribute('data-lng'));
+    const lat = jobsnob_validateLatLong(geoEl.getAttribute('data-lat'));
+    const lng = jobsnob_validateLatLong(geoEl.getAttribute('data-lng'));
 
     if (isNaN(lat) || isNaN(lng)) return isShowInvalidGeo; // If the location is not set, let's show the job, too
 
