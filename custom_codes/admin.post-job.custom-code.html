@@ -32,6 +32,21 @@
       });
     }
 
+    if (placeAutocomplete.Qg) {
+      placeAutocomplete.Qg.addEventListener('click', function (e) {
+        setTimeout(() => {
+          document.getElementById("Address1").value = '';
+          document.getElementById("Address2").value = '';
+          document.getElementById("City").value = '';
+          document.getElementById("State").value = '';
+          document.getElementById("Zipcode").value = '';
+
+          document.getElementById("Latitude").value = '';
+          document.getElementById("Longitude").value = '';
+        }, 100);
+      });
+    }
+
     wrapper.appendChild(placeAutocomplete);
 
     placeAutocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {

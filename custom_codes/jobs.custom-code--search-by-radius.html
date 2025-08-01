@@ -44,7 +44,7 @@
         }
       });
 
-      placeAutocomplete.Dg.addEventListener('keyup', function (e) {
+      placeAutocomplete.Dg.addEventListener('input', function (e) {
         const value = e.target.value;
         if (value === '') {
           // Clear all address fields
@@ -52,6 +52,16 @@
           document.getElementById("radius-search--lng").value = '';
           triggerFilter();
         }
+      });
+    }
+
+    if (placeAutocomplete.Qg) {
+      placeAutocomplete.Qg.addEventListener('click', function (e) {
+        setTimeout(() => {
+          document.getElementById("radius-search--lat").value = '';
+          document.getElementById("radius-search--lng").value = '';
+          triggerFilter();
+        }, 100);
       });
     }
 
