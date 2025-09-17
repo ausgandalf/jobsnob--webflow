@@ -1,0 +1,117 @@
+<input type='hidden' id='Company-CMS-ID' value='{{wf {&quot;path&quot;:&quot;companies:cms-id&quot;,&quot;type&quot;:&quot;PlainText&quot;\} }}' />
+<input type="hidden" id="Job-CMS-ID" name="Job-CMS-ID" value="{{wf {&quot;path&quot;:&quot;cms-id&quot;,&quot;type&quot;:&quot;PlainText&quot;\} }}"/>
+<input type="hidden" id="Job-CMS-SLUG" name="Job-CMS-SLUG" value="{{wf {&quot;path&quot;:&quot;slug&quot;,&quot;type&quot;:&quot;PlainText&quot;\} }}"/>
+
+<script>
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //
+  // Load the applicants list via AJAX so it won’t be indexed by Google, and only authorized users will be able to see it.
+  //
+  const applicantInfoTemplate = `<div role="listitem" class="w-dyn-item">
+    <div class="applicant">
+        <div class="applicant_top">
+            <div class="applicant_left">
+                <div>
+                    <div class="applicant_name-6">{name}</div>
+                    <div>{skill}</div>
+                    <div>{bio}</div>
+                </div>
+            </div>
+        </div>
+        <div class="spacer-small"></div>
+        <a href="/applicant/{slug}" class="dashboard_button is-wide w-inline-block">
+            <div class="icon-embed-xxsmall w-embed">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--ic" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24">
+                    <path fill="currentColor" fill-rule="evenodd" d="M16.67 13.13C18.04 14.06 19 15.32 19 17v3h4v-3c0-2.18-3.57-3.47-6.33-3.87z"></path>
+                    <circle cx="9" cy="8" r="4" fill="currentColor" fill-rule="evenodd"></circle>
+                    <path fill="currentColor" fill-rule="evenodd" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4c-.47 0-.91.1-1.33.24a5.98 5.98 0 0 1 0 7.52c.42.14.86.24 1.33.24zm-6 1c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"></path>
+                </svg>
+            </div>
+            <div>View profile</div>
+        </a>
+    </div>
+  </div>`;
+
+  const emptyApplicantsListTemplate = `<div class="w-dyn-empty">
+    <div>No applicants found</div>
+  </div>`;
+
+  // let's check currently logged in user's details, not from local storage
+  document.addEventListener("DOMContentLoaded", async () => {
+    // Make sure Memberstack is loaded
+    const memberstack = window.$memberstackDom;
+    if (!memberstack) return;
+
+    // Get current member data
+    const { data: member } = await memberstack.getCurrentMember();
+    if (member) {
+      await loadApplicantsList(member);
+    } else {
+      console.log("No logged-in member");
+    }
+  });
+
+  async function loadApplicantsList(member) {
+    // Check their plan(s)
+    const hasCompanyPlan = member.planConnections.some(
+      (plan) => plan.planId === "pln_company-mc1tf0lo8"
+    );
+
+    // If not on company plan, return
+    if (!hasCompanyPlan) return;
+
+    // console.log("✅ User is on Company plan");
+
+    // Get member info
+    const memberId = member.id;
+    let companyCMSId = member.customFields['cms-id'];
+
+    // Get job id
+    const jobIdElement = document.getElementById("Job-CMS-ID");
+    const jobId = jobIdElement?.value;
+    
+    // Get job poster's id
+    const jobPosterIdElement = document.getElementById("Company-CMS-ID");
+    const jobPosterId = jobPosterIdElement?.value;
+
+    // console.log('memberId', memberId);
+    // console.log('jobId', jobId);
+    // console.log('jobPosterId', jobPosterId);
+    // console.log('companyCMSId', companyCMSId);
+
+    if (memberId && jobId && jobPosterId && companyCMSId && (jobPosterId == companyCMSId)) {
+      // TODO Load applicants list
+      await doLoadApplicantsList(memberId, jobId);
+    }
+  }
+
+  async function doLoadApplicantsList(memberId, jobId) {
+    // TODO Load applicants list
+    const applicantsList = document.getElementById("applicants-list");
+    document.getElementById("applicants-list-wrapper").style.display = "block";
+
+    fetch(`https://hook.us2.make.com/anfc64l4kpdv80rq2d9osjuifxya6sf7?member=${memberId}&job=${jobId}`)
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        if (data.length > 0) {
+          applicantsList.innerHTML = `<div fs-cmsfilter-element="list" role="list" class="applicant-list w-dyn-items">` + data.map(
+            applicant => 
+              applicantInfoTemplate
+                .replace('{name}', applicant.fieldData.name)
+                .replace('{slug}', applicant.fieldData.slug)
+                .replace('{skill}', applicant.fieldData['skills-3'])
+                .replace('{bio}', applicant.fieldData.bio)
+          ).join('') + `</div>`;
+        } else {
+          applicantsList.innerHTML = emptyApplicantsListTemplate;
+        }
+      })
+      .catch(error => {
+        // 
+      })
+      .finally(() => {
+        //
+      });
+  }
+</script>
