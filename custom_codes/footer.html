@@ -30,3 +30,47 @@ if (memberData && $memberstackDom) {
 }
 });
 </script>
+
+
+<script>
+  const TRACK_MAX_RETRIES = 10;
+  const TRACK_RETRY_INTERVAL = 500; // milliseconds
+
+  function trackPageVisit() {
+    klaviyo.track('Visited Page', {
+      'Page URL': window.location.href,
+      'Page Title': document.title,
+      'Referrer': document.referrer || 'Direct'
+    });
+  }
+
+  function trackUserVisitedPage(member) {
+    // Identify first if member exists
+    if (member) {
+      klaviyo.identify({
+        'email' : member.auth.email,
+        'first_name' : member.customFields['first-name'],
+        'last_name' : member.customFields['last-name'],
+      }, trackPageVisit);
+    } else {
+      trackPageVisit();
+    }
+  }
+
+  async function doKlaviyoTrack(retryCount = 0) {
+    if (!window.klaviyo || !window.$memberstackDom) {
+      if (retryCount < TRACK_MAX_RETRIES) {
+        setTimeout(() => doKlaviyoTrack(retryCount + 1), TRACK_RETRY_INTERVAL);
+      }
+      return;
+    }
+    
+    const { data: member } = await window.$memberstackDom.getCurrentMember();
+    trackUserVisitedPage(member);
+  }
+
+  // Wait until Memberstack is ready
+  window.addEventListener('DOMContentLoaded', async function() {
+    await doKlaviyoTrack();
+  });
+</script>
