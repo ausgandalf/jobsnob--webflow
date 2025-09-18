@@ -53,12 +53,16 @@
 
   async function loadApplicantsList(member) {
     // Check their plan(s)
+    const hasAdminPlan = member.planConnections.some(
+      (plan) => plan.planId === "pln_admin-o4240wov"
+    );
+
     const hasCompanyPlan = member.planConnections.some(
       (plan) => plan.planId === "pln_company-mc1tf0lo8"
     );
 
     // If not on company plan, return
-    if (!hasCompanyPlan) return;
+    if (!hasCompanyPlan && !hasAdminPlan) return;
 
     // console.log("✅ User is on Company plan");
 
@@ -79,7 +83,7 @@
     // console.log('jobPosterId', jobPosterId);
     // console.log('companyCMSId', companyCMSId);
 
-    if (memberId && jobId && jobPosterId && companyCMSId && (jobPosterId == companyCMSId)) {
+    if (memberId && jobId && (hasAdminPlan || (jobPosterId && companyCMSId && (jobPosterId == companyCMSId)))) {
       // TODO Load applicants list
       await doLoadApplicantsList(memberId, jobId);
     }
@@ -93,7 +97,6 @@
     fetch(`https://hook.us2.make.com/anfc64l4kpdv80rq2d9osjuifxya6sf7?member=${memberId}&job=${jobId}`)
       .then(response => response.json())
       .then(data => {
-        console.log(data);
         if (data.length > 0) {
           applicantsList.innerHTML = `<div fs-cmsfilter-element="list" role="list" class="applicant-list w-dyn-items">` + data.map(
             applicant => 
@@ -109,6 +112,7 @@
       })
       .catch(error => {
         // 
+        applicantsList.innerHTML = emptyApplicantsListTemplate;
       })
       .finally(() => {
         //
